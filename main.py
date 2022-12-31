@@ -4,16 +4,14 @@ import os
 from selenium import webdriver
 
 
-
-
-
 def main():
     # print(configLoaderUtil.loadYaml('config.yml'))
-    driver = webdriver.Chrome(os.path.expanduser('~/Desktop/chromedriver'))  # Optional argument, if not specified will search path.
+    # Optional argument, if not specified will search path.
+    driver = webdriver.Chrome(os.path.expanduser('~/Desktop/chromedriver'))
 
     driver.get('http://www.google.com/')
 
-    time.sleep(5) # Let the user actually see something!
+    time.sleep(5)  # Let the user actually see something!
 
     search_box = driver.find_element_by_name('q')
 
@@ -21,10 +19,10 @@ def main():
 
     search_box.submit()
 
-    time.sleep(5) # Let the user actually see something!
+    time.sleep(5)  # Let the user actually see something!
 
     driver.quit()
-    
+
 
 if __name__ == "__main__":
     main()
