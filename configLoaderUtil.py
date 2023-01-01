@@ -1,9 +1,9 @@
 import yaml
 
-class configLoaderUtil:
+class ConfigLoaderUtil:
     
     @staticmethod
-    def loadYaml(yamlFile):
+    def load_yaml(yaml_file):
         '''
         Returns python object constructed from parsed YAML file
         ---
@@ -14,5 +14,5 @@ class configLoaderUtil:
         Outputs:
             Dictionary constructed from YAML file
         '''
-        file = open(yamlFile, 'r')
+        file = open(yaml_file, 'r')
         return yaml.safe_load(file)

@@ -1,27 +1,16 @@
-from configLoaderUtil import configLoaderUtil
+from ConfigLoaderUtil import ConfigLoaderUtil
 import time
 import os
-from selenium import webdriver
-
+from BlitzScraper import BlitzScraper
 
 def main():
     # print(configLoaderUtil.loadYaml('config.yml'))
-    # Optional argument, if not specified will search path.
-    driver = webdriver.Chrome(os.path.expanduser('~/Desktop/chromedriver'))
+    config_params = ConfigLoaderUtil.load_yaml("config.yml")
+    if config_params["run_mode"] == "load_data":
+        scraper = BlitzScraper(config_params['data_import_parameters'])
+        scraper.run_scraper()
 
-    driver.get('http://www.google.com/')
 
-    time.sleep(5)  # Let the user actually see something!
-
-    search_box = driver.find_element_by_name('q')
-
-    search_box.send_keys('ChromeDriver')
-
-    search_box.submit()
-
-    time.sleep(5)  # Let the user actually see something!
-
-    driver.quit()
 
 
 if __name__ == "__main__":
