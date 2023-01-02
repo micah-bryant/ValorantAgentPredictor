@@ -23,9 +23,9 @@ class BlitzScraper:
     def fetch(self, url):
         response = requests.get(url)
         html = response.text
-        text_file = open("sample.txt", "w")
-        n = text_file.write(html)
-        text_file.close()
+        # text_file = open("sample.txt", "w")
+        # n = text_file.write(html)
+        # text_file.close()
         return html
 
     def parse(self, html):
@@ -34,12 +34,44 @@ class BlitzScraper:
 
     def extract_data(self, soup):
         data = []
-        stats = soup.find_all("main")
-        for stat in stats:
-            #will need to use "div", height="48" and find_all combined with .text
-            name = stat.find("div", class_="Table")
-            value = stat.find("div", class_="Table-rowValue").text
-            data.append([name, value])
+        # Find the block containing the data table
+        soup_main = soup.find("main")
+        
+        titles = self.extract_titles(soup_main)
+        data = self.extract_row_data(soup_main)
+        
+        df = self.create_dataframe(data, titles)
+        return df
+    
+    def extract_titles(self, soup_main):
+        # Use a dictionary to check uniqueness and preserve order
+        titles_list = {}
+        # Titles on Blitz.gg are placed in a single row of height 30
+        soup_main_titles = soup_main.find("div", height="30")
+        
+        # Separate out the titles after finding the titles row
+        titles = soup_main_titles.find_all("div")
+        for title in titles:
+            # Ensure no empty strings are allowed
+            if len(title.text) > 0:
+                titles_list[title.text] = None
+        titles_list = list(titles_list.keys())
+        return titles_list
+    
+    def extract_row_data(self, soup_main):
+        data = []
+        # Data rows on Blitz.gg are placed in rows of height 48
+        soup_main_row = soup_main.find_all("div", height="48")
+        for row in soup_main_row:
+            # Use a dictionary here to remove duplicates (list) and preserve order (set)
+            row_data = {}
+            # Separate out each column in the row
+            row_div = row.find_all("div")
+            for value in row_div:
+                # Ensure no empty strings are allowed
+                if len(value.text) > 0:
+                    row_data[value.text] = None
+            data.append(list(row_data.keys()))
         return data
     
     def scrape(self, url):
@@ -48,7 +80,7 @@ class BlitzScraper:
         data = self.extract_data(soup)
         return data
 
-    def create_dataframe(self, data, column_names=["Name", "Value"]):
+    def create_dataframe(self, data, column_names):
         df = pd.DataFrame(data, columns=column_names)
         return df
 
@@ -61,32 +93,47 @@ class BlitzScraper:
 
     def scrape_maps(self):
         print("BlitzScraper::scrape_maps -- collecting map data")
-        data = []
+        
+        # TODO: make this work with the df returned from scrape
         if self.m_params["data_spec"] == "all":
             for rank in self.m_rank:
                 for episode in self.m_episode:
                     for act in self.m_act:
                         url = f"https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
                         page_data = self.scrape(url)
-                        data.extend(page_data)
         else:
             url = f"https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
             page_data = self.scrape(url)
-            data.extend(page_data)
-        df = self.create_dataframe(data)
-        return df
+            print(page_data)
+        return page_data
 
     def scrape_agents(self):
-        for rank in self.m_rank:
-            for episode in self.m_episode:
-                for act in self.m_act:
-                    url = f"https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
+        print("BlitzScraper::scrape_agents -- collecting agent data")
+        
+        if self.m_params["data_spec"] == "all":
+            for rank in self.m_rank:
+                for episode in self.m_episode:
+                    for act in self.m_act:
+                        url = url = f"https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
+                        page_data = self.scrape(url)
+        else:
+            url = f"https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
+            page_data = self.scrape(url)
+            print(page_data)
 
     def scrape_weapons(self):
-        for rank in self.m_rank:
-            for episode in self.m_episode:
-                for act in self.m_act:
-                    url = f"https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
+        print("BlitzScraper::scrape_weapons -- collecting weapon data")
+        
+        if self.m_params["data_spec"] == "all":
+            for rank in self.m_rank:
+                for episode in self.m_episode:
+                    for act in self.m_act:
+                        url = f"https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
+                        page_data = self.scrape(url)
+        else:
+            url = f"https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
+            page_data = self.scrape(url)
+            print(page_data)
 
     def run_scraper(self):
         print("BlitzScraper::run_scraper -- running scraper")
@@ -99,6 +146,5 @@ class BlitzScraper:
             self.scrape_agents()
         elif self.m_params["dataset"] == "maps":
             df = self.scrape_maps()
-            print(df)
         elif self.m_params["dataset"] == "weapons":
             self.scrape_weapons()

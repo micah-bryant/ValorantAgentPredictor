@@ -9,7 +9,7 @@ data_import_parameters:
   # specify which competitive rank (unrated = 0, plat 2 = 16, iron 1 = 3)
   rank: 17
   # specify which data set to import (maps, agents, weapons, all)
-  dataset: 'maps'
+  dataset: 'all'
   # bounds for episodes and ranks on website
   min_rank: 3
   max_rank: 27
