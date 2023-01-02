@@ -23,9 +23,6 @@ class BlitzScraper:
     def fetch(self, url):
         response = requests.get(url)
         html = response.text
-        # text_file = open("sample.txt", "w")
-        # n = text_file.write(html)
-        # text_file.close()
         return html
 
     def parse(self, html):
