@@ -7,6 +7,11 @@ class BlitzScraper:
     def __init__(self, import_params):
         # TODO: automate which maps are available on each season
         self.m_params = import_params
+        self.m_url_map = {
+            "Agents": "https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive",
+            "Maps": "https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive",
+            "Weapons": "https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive"
+        }
 
         if import_params["data_spec"] == "all":
             self.m_rank = [i for i in range(
@@ -36,7 +41,6 @@ class BlitzScraper:
         
         titles = self.extract_titles(soup_main)
         data = self.extract_row_data(soup_main)
-        
         df = self.create_dataframe(data, titles)
         return df
     
@@ -88,60 +92,36 @@ class BlitzScraper:
                 # TODO: need this to get all map names
                 self.m_maps[f"e{episode}act{act}"] = 0
 
-    def scrape_maps(self):
-        print("BlitzScraper::scrape_maps -- collecting map data")
+    def perform_scrape(self, category):
+        print(f"BlitzScraper::scrape_{category} -- collecting {category} data")
         
         # TODO: make this work with the df returned from scrape
         if self.m_params["data_spec"] == "all":
             for rank in self.m_rank:
                 for episode in self.m_episode:
                     for act in self.m_act:
-                        url = f"https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
-                        page_data = self.scrape(url)
+                        # print(f"Scraping::{category}_rank{rank}_episode{episode}_act{act}")
+                        url = f"{self.m_url_map[category]}&rank={rank}&act=e{episode}act{act}"
+                        try:
+                            page_data = self.scrape(url)
+                            page_data.to_csv(f"{category}/{category}_rank{rank}_episode{episode}_act{act}")
+                        except:
+                            print(f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}")
         else:
-            url = f"https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
-            page_data = self.scrape(url)
-            print(page_data)
-        return page_data
-
-    def scrape_agents(self):
-        print("BlitzScraper::scrape_agents -- collecting agent data")
-        
-        if self.m_params["data_spec"] == "all":
-            for rank in self.m_rank:
-                for episode in self.m_episode:
-                    for act in self.m_act:
-                        url = url = f"https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
-                        page_data = self.scrape(url)
-        else:
-            url = f"https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
-            page_data = self.scrape(url)
-            print(page_data)
-
-    def scrape_weapons(self):
-        print("BlitzScraper::scrape_weapons -- collecting weapon data")
-        
-        if self.m_params["data_spec"] == "all":
-            for rank in self.m_rank:
-                for episode in self.m_episode:
-                    for act in self.m_act:
-                        url = f"https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive&rank={rank}&act=e{episode}act{act}"
-                        page_data = self.scrape(url)
-        else:
-            url = f"https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
-            page_data = self.scrape(url)
-            print(page_data)
+            # print(f"Scraping::{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
+            url = f"{self.m_url_map[category]}&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
+            try:
+                page_data = self.scrape(url)
+                page_data.to_csv(f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
+            except:
+                print(f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
 
     def run_scraper(self):
         print("BlitzScraper::run_scraper -- running scraper")
 
         if self.m_params["dataset"] == "all":
-            self.scrape_agents()
-            self.scrape_maps()
-            self.scrape_weapons()
-        elif self.m_params["dataset"] == "agents":
-            self.scrape_agents()
-        elif self.m_params["dataset"] == "maps":
-            df = self.scrape_maps()
-        elif self.m_params["dataset"] == "weapons":
-            self.scrape_weapons()
+            self.perform_scrape("Weapons")
+            self.perform_scrape("Maps")
+            self.perform_scrape("Agents")
+        else:
+            self.perform_scrape(self.m_params["dataset"])
