@@ -5,14 +5,22 @@ import pandas as pd
 
 class BlitzScraper:
     def __init__(self, import_params):
-        # TODO: automate which maps are available on each season
+        """Initializes the web scraper with correct urls, ranks to scrape, 
+            episodes to scrape, and acts to scrape
+
+        Args:
+            import_params (dictionary): dictionary created from data import parameters in yaml file
+        """
         self.m_params = import_params
+
+        # Allocate base URLs to pass to requests in fstring
         self.m_url_map = {
             "Agents": "https://blitz.gg/valorant/stats/agents?sortBy=matches&type=general&sortDirection=DESC&mode=competitive",
             "Maps": "https://blitz.gg/valorant/stats/maps?sortBy=attackingRoundWinRate&sortDirection=DESC&mode=competitive",
             "Weapons": "https://blitz.gg/valorant/stats/weapons?sortBy=killsPerMatch&type=all&sortDirection=DESC&mode=competitive"
         }
 
+        # Create ranks, episodes, and acts to scrape
         if import_params["data_spec"] == "all":
             self.m_rank = [i for i in range(
                 import_params["min_rank"], import_params["max_rank"]+1)]
@@ -26,30 +34,62 @@ class BlitzScraper:
             self.m_act = import_params["act"]
 
     def fetch(self, url):
+        """Attempts to fetch html file from url
+
+        Args:
+            url (string): a url that requests will attempt to access
+
+        Returns:
+            html (string): a string containing the entire html file response from requests in unicode
+        """
         response = requests.get(url)
         html = response.text
         return html
 
     def parse(self, html):
+        """Generates beautifulsoup object that is able to be parsed by html keys
+
+        Args:
+            html (string): string object containing html file in unicode
+
+        Returns:
+            beautifulsoup object: Object from an html file that can be parsed by html keys
+        """
         soup = BeautifulSoup(html, "html.parser")
         return soup
 
     def extract_data(self, soup):
+        """Generated a pandas dataframe from data contained within a soup object
+
+        Args:
+            soup (beautifulsoup object): object that contains an html file that is able to be parsed
+
+        Returns:
+            Pandas dataframe: dataframe containing data from the soup object
+        """
         data = []
         # Find the block containing the data table
         soup_main = soup.find("main")
-        
+
         titles = self.extract_titles(soup_main)
         data = self.extract_row_data(soup_main)
         df = self.create_dataframe(data, titles)
         return df
-    
+
     def extract_titles(self, soup_main):
-        # Use a dictionary to check uniqueness and preserve order
+        """Extract the title strings from soup object
+
+        Args:
+            soup_main (beautifulsoup object): soup object parsed by main tag
+
+        Returns:
+            list[strings]: a list of titles for columns in a dataframe
+        """
+        # Use a dictionary to check uniqueness and preserve order of being added
         titles_list = {}
         # Titles on Blitz.gg are placed in a single row of height 30
         soup_main_titles = soup_main.find("div", height="30")
-        
+
         # Separate out the titles after finding the titles row
         titles = soup_main_titles.find_all("div")
         for title in titles:
@@ -58,8 +98,16 @@ class BlitzScraper:
                 titles_list[title.text] = None
         titles_list = list(titles_list.keys())
         return titles_list
-    
+
     def extract_row_data(self, soup_main):
+        """Extract the data from soup object
+
+        Args:
+            soup_main (beautifulsoup object): soup object parsed by main tag
+
+        Returns:
+            list[list]: a list of lists of row data
+        """
         data = []
         # Data rows on Blitz.gg are placed in rows of height 48
         soup_main_row = soup_main.find_all("div", height="48")
@@ -74,49 +122,68 @@ class BlitzScraper:
                     row_data[value.text] = None
             data.append(list(row_data.keys()))
         return data
-    
+
     def scrape(self, url):
+        """Scrape the URL for the data in a table and return in pandas dataframe
+
+        Args:
+            url (string): URL containing the data to be scraped
+
+        Returns:
+            pandas dataframe: dataframe containing the data found within the URL
+        """
         html = self.fetch(url)
         soup = self.parse(html)
         data = self.extract_data(soup)
         return data
 
     def create_dataframe(self, data, column_names):
+        """Create a pandas dataframe based on the data and label the columns
+
+        Args:
+            data (list[list]): list of lists containg row data
+            column_names (list[strings]): list of strings containing column titles
+
+        Returns:
+            pandas dataframe: dataframe constructed from passed in data and column titles
+        """
         df = pd.DataFrame(data, columns=column_names)
         return df
 
-    def get_maps(self):
-        self.m_season = {}
-        for episode in self.m_episode:
-            for act in self.m_act:
-                # TODO: need this to get all map names
-                self.m_maps[f"e{episode}act{act}"] = 0
-
     def perform_scrape(self, category):
-        print(f"BlitzScraper::scrape_{category} -- collecting {category} data")
-        
-        # TODO: make this work with the df returned from scrape
+        """Scrape Blitz.gg for data based on category, rank, episode, and act
+            Save it to appropriate folder based on category, create a CSV, and label it
+
+        Args:
+            category (string): string declaring whether to scrape Maps, Agents, or Weapons
+        """
+        print(f"BlitzScraper::perform_scrape -- collecting {category} data")
+
         if self.m_params["data_spec"] == "all":
             for rank in self.m_rank:
                 for episode in self.m_episode:
                     for act in self.m_act:
-                        # print(f"Scraping::{category}_rank{rank}_episode{episode}_act{act}")
                         url = f"{self.m_url_map[category]}&rank={rank}&act=e{episode}act{act}"
                         try:
                             page_data = self.scrape(url)
-                            page_data.to_csv(f"{category}/{category}_rank{rank}_episode{episode}_act{act}")
+                            page_data.to_csv(
+                                f"{category}/{category}_rank{rank}_episode{episode}_act{act}.csv")
                         except:
-                            print(f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}")
+                            print(
+                                f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}")
         else:
-            # print(f"Scraping::{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
             url = f"{self.m_url_map[category]}&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
             try:
                 page_data = self.scrape(url)
-                page_data.to_csv(f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
+                page_data.to_csv(
+                    f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}.csv")
             except:
-                print(f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
+                print(
+                    f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
 
     def run_scraper(self):
+        """Run webscraper for Blitz.gg based on yaml config parameters
+        """
         print("BlitzScraper::run_scraper -- running scraper")
 
         if self.m_params["dataset"] == "all":

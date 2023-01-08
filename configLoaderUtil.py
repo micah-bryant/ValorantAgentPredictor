@@ -1,7 +1,8 @@
 import yaml
 
+
 class ConfigLoaderUtil:
-    
+
     @staticmethod
     def load_yaml(yaml_file):
         '''
