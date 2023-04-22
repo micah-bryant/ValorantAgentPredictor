@@ -9,6 +9,5 @@ def main()->None:
         scraper = BlitzScraper(config_params['data_import_parameters'])
         scraper.run_scraper()
 
-
 if __name__ == "__main__":
     main()
