@@ -32,8 +32,9 @@ class BlitzScraper:
             self.m_rank = import_params["rank"]
             self.m_episode = import_params["episode"]
             self.m_act = import_params["act"]
-            
-        self.m_maps = ["split", "ascent", "haven", "icebox", "breeze", "bind", "fracture", "pearl", "lotus"]
+
+        self.m_maps = ["split", "ascent", "haven", "icebox",
+                       "breeze", "bind", "fracture", "pearl", "lotus"]
 
     def fetch(self, url: str) -> str:
         """Attempts to fetch html file from url
@@ -142,7 +143,7 @@ class BlitzScraper:
             dataframe = self.create_dataframe(data, titles)
         return dataframe
 
-    def create_dataframe(self, data:list[list[str]], column_names:list[str])->pd.DataFrame:
+    def create_dataframe(self, data: list[list[str]], column_names: list[str]) -> pd.DataFrame:
         """Create a pandas dataframe based on the data and label the columns
 
         Args:
@@ -155,7 +156,7 @@ class BlitzScraper:
         df = pd.DataFrame(data, columns=column_names)
         return df
 
-    def perform_scrape(self, category:str)->None:
+    def perform_scrape(self, category: str) -> None:
         """Scrape Blitz.gg for data based on category, rank, episode, and act
             Save it to appropriate folder based on category, create a CSV, and label it
 
@@ -187,8 +188,8 @@ class BlitzScraper:
             except:
                 print(
                     f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
-                
-    def perform_agent_map_scrape(self)->None:
+
+    def perform_agent_map_scrape(self) -> None:
         """Scrape Blitz.gg for data based on category, rank, episode, and act
             Save it to appropriate folder based on category, create a CSV, and label it
 
@@ -196,7 +197,8 @@ class BlitzScraper:
             category (str): string declaring whether to scrape Maps, Agents, or Weapons
         """
         category = "Agents"
-        print(f"BlitzScraper::perform_scrape -- collecting {category} data for all maps")
+        print(
+            f"BlitzScraper::perform_scrape -- collecting {category} data for all maps")
 
         if self.m_params["data_spec"] == "all":
             for rank in self.m_rank:
@@ -211,7 +213,8 @@ class BlitzScraper:
                                         f"{category}/{category}_rank{rank}_episode{episode}_act{act}_map{map}.csv")
                             except Exception as e:
                                 print(repr(e))
-                                print(f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}_map{map}")
+                                print(
+                                    f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}_map{map}")
         else:
             for map in self.m_maps:
                 url = f"{self.m_url_map[category]}&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}&map={map}"
@@ -222,9 +225,10 @@ class BlitzScraper:
                             f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}_map{map}.csv")
                 except Exception as e:
                     print(repr(e))
-                    print(f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}_map{map}")
+                    print(
+                        f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}_map{map}")
 
-    def run_scraper(self)->None:
+    def run_scraper(self) -> None:
         """Run webscraper for Blitz.gg based on yaml config parameters"""
         print("BlitzScraper::run_scraper -- running scraper")
 
