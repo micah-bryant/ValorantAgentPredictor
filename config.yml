@@ -17,7 +17,7 @@ data_import_parameters:
   # bounds for episodes and ranks on website
   min_rank: 3
   max_rank: 27
-  min_episode: 2
+  min_episode: 6
   max_episode: 6
   min_act: 1
-  max_act: 3
+  max_act: 2
