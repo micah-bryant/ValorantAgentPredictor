@@ -2,10 +2,10 @@
 run_mode: "load_data"
 data_import_parameters:
   # specify if all data is too be scraped (all episodes, all ranks) (options: all, single)
-  data_spec: "all"
+  data_spec: "single"
 
   # specify episode and act to import data for
-  episode: 2
+  episode: 5
   act: 1
 
   # specify which competitive rank (unrated = 0, plat 2 = 16, iron 1 = 3)

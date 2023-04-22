@@ -1,15 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from collections import OrderedDict
 
 
 class BlitzScraper:
-    def __init__(self, import_params):
-        """Initializes the web scraper with correct urls, ranks to scrape, 
-            episodes to scrape, and acts to scrape
+    def __init__(self, import_params: dict[str, any]) -> None:
+        """Initializes the web scraper with correct urls, ranks to scrape, episodes to scrape, and acts to scrape
 
         Args:
-            import_params (dictionary): dictionary created from data import parameters in yaml file
+            import_params (dict[str, any]): dictionary created from data import parameters in yaml file
         """
         self.m_params = import_params
 
@@ -33,36 +33,36 @@ class BlitzScraper:
             self.m_episode = import_params["episode"]
             self.m_act = import_params["act"]
 
-    def fetch(self, url):
+    def fetch(self, url: str) -> str:
         """Attempts to fetch html file from url
 
         Args:
-            url (string): a url that requests will attempt to access
+            url (str): a url that requests will attempt to access
 
         Returns:
-            html (string): a string containing the entire html file response from requests in unicode
+            html (str): a string containing the entire html file response from requests in unicode
         """
         response = requests.get(url)
         html = response.text
         return html
 
-    def parse(self, html):
+    def parse(self, html: str) -> BeautifulSoup:
         """Generates beautifulsoup object that is able to be parsed by html keys
 
         Args:
-            html (string): string object containing html file in unicode
+            html (str): string object containing html file in unicode
 
         Returns:
-            beautifulsoup object: Object from an html file that can be parsed by html keys
+            BeautifulSoup object: Object from an html file that can be parsed by html keys
         """
         soup = BeautifulSoup(html, "html.parser")
         return soup
 
-    def extract_data(self, soup):
+    def extract_data(self, soup: BeautifulSoup) -> pd.DataFrame:
         """Generated a pandas dataframe from data contained within a soup object
 
         Args:
-            soup (beautifulsoup object): object that contains an html file that is able to be parsed
+            soup (BeautifulSoup object): object that contains an html file that is able to be parsed
 
         Returns:
             Pandas dataframe: dataframe containing data from the soup object
@@ -76,17 +76,17 @@ class BlitzScraper:
         df = self.create_dataframe(data, titles)
         return df
 
-    def extract_titles(self, soup_main):
+    def extract_titles(self, soup_main: BeautifulSoup) -> list[str]:
         """Extract the title strings from soup object
 
         Args:
-            soup_main (beautifulsoup object): soup object parsed by main tag
+            soup_main (BeautifulSoup object): soup object parsed by main tag
 
         Returns:
-            list[strings]: a list of titles for columns in a dataframe
+            list[str]: a list of titles for columns in a dataframe
         """
-        # Use a dictionary to check uniqueness and preserve order of being added
-        titles_list = {}
+        # Use ordered dictionary to check uniqueness and preserve order of being added
+        titles_list = OrderedDict()
         # Titles on Blitz.gg are placed in a single row of height 30
         soup_main_titles = soup_main.find("div", height="30")
 
@@ -99,21 +99,21 @@ class BlitzScraper:
         titles_list = list(titles_list.keys())
         return titles_list
 
-    def extract_row_data(self, soup_main):
+    def extract_row_data(self, soup_main: BeautifulSoup) -> list[list[str]]:
         """Extract the data from soup object
 
         Args:
-            soup_main (beautifulsoup object): soup object parsed by main tag
+            soup_main (BeautifulSoup object): soup object parsed by main tag
 
         Returns:
-            list[list]: a list of lists of row data
+            list[list[str]]: a list of lists of row data
         """
         data = []
         # Data rows on Blitz.gg are placed in rows of height 48
         soup_main_row = soup_main.find_all("div", height="48")
         for row in soup_main_row:
-            # Use a dictionary here to remove duplicates (list) and preserve order (set)
-            row_data = {}
+            # Use ordered dictionary here to remove duplicates (list) and preserve order (set)
+            row_data = OrderedDict()
             # Separate out each column in the row
             row_div = row.find_all("div")
             for value in row_div:
@@ -123,11 +123,11 @@ class BlitzScraper:
             data.append(list(row_data.keys()))
         return data
 
-    def scrape(self, url):
+    def scrape(self, url: str) -> pd.DataFrame:
         """Scrape the URL for the data in a table and return in pandas dataframe
 
         Args:
-            url (string): URL containing the data to be scraped
+            url (str): URL containing the data to be scraped
 
         Returns:
             pandas dataframe: dataframe containing the data found within the URL
@@ -137,12 +137,12 @@ class BlitzScraper:
         data = self.extract_data(soup)
         return data
 
-    def create_dataframe(self, data, column_names):
+    def create_dataframe(self, data:list[list[str]], column_names:list[str])->pd.DataFrame:
         """Create a pandas dataframe based on the data and label the columns
 
         Args:
-            data (list[list]): list of lists containg row data
-            column_names (list[strings]): list of strings containing column titles
+            data (list[list[str]]): list of lists containg row data
+            column_names (list[str]): list of strings containing column titles
 
         Returns:
             pandas dataframe: dataframe constructed from passed in data and column titles
@@ -150,12 +150,12 @@ class BlitzScraper:
         df = pd.DataFrame(data, columns=column_names)
         return df
 
-    def perform_scrape(self, category):
+    def perform_scrape(self, category:str)->None:
         """Scrape Blitz.gg for data based on category, rank, episode, and act
             Save it to appropriate folder based on category, create a CSV, and label it
 
         Args:
-            category (string): string declaring whether to scrape Maps, Agents, or Weapons
+            category (str): string declaring whether to scrape Maps, Agents, or Weapons
         """
         print(f"BlitzScraper::perform_scrape -- collecting {category} data")
 
@@ -181,9 +181,8 @@ class BlitzScraper:
                 print(
                     f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
 
-    def run_scraper(self):
-        """Run webscraper for Blitz.gg based on yaml config parameters
-        """
+    def run_scraper(self)->None:
+        """Run webscraper for Blitz.gg based on yaml config parameters"""
         print("BlitzScraper::run_scraper -- running scraper")
 
         if self.m_params["dataset"] == "all":
