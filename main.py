@@ -1,6 +1,4 @@
 from ConfigLoaderUtil import ConfigLoaderUtil
-import time
-import os
 from BlitzScraper import BlitzScraper
 
 
