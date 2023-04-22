@@ -32,6 +32,8 @@ class BlitzScraper:
             self.m_rank = import_params["rank"]
             self.m_episode = import_params["episode"]
             self.m_act = import_params["act"]
+            
+        self.m_maps = ["split", "ascent", "haven", "icebox", "breeze", "bind", "fracture", "pearl", "lotus"]
 
     def fetch(self, url: str) -> str:
         """Attempts to fetch html file from url
@@ -42,6 +44,7 @@ class BlitzScraper:
         Returns:
             html (str): a string containing the entire html file response from requests in unicode
         """
+        print(url)
         response = requests.get(url)
         html = response.text
         return html
@@ -58,7 +61,7 @@ class BlitzScraper:
         soup = BeautifulSoup(html, "html.parser")
         return soup
 
-    def extract_data(self, soup: BeautifulSoup) -> pd.DataFrame:
+    def extract_data(self, soup: BeautifulSoup) -> tuple[list[list[str]], list[str]]:
         """Generated a pandas dataframe from data contained within a soup object
 
         Args:
@@ -73,8 +76,7 @@ class BlitzScraper:
 
         titles = self.extract_titles(soup_main)
         data = self.extract_row_data(soup_main)
-        df = self.create_dataframe(data, titles)
-        return df
+        return data, titles
 
     def extract_titles(self, soup_main: BeautifulSoup) -> list[str]:
         """Extract the title strings from soup object
@@ -132,10 +134,13 @@ class BlitzScraper:
         Returns:
             pandas dataframe: dataframe containing the data found within the URL
         """
+        dataframe = None
         html = self.fetch(url)
         soup = self.parse(html)
-        data = self.extract_data(soup)
-        return data
+        data, titles = self.extract_data(soup)
+        if data:
+            dataframe = self.create_dataframe(data, titles)
+        return dataframe
 
     def create_dataframe(self, data:list[list[str]], column_names:list[str])->pd.DataFrame:
         """Create a pandas dataframe based on the data and label the columns
@@ -166,8 +171,9 @@ class BlitzScraper:
                         url = f"{self.m_url_map[category]}&rank={rank}&act=e{episode}act{act}"
                         try:
                             page_data = self.scrape(url)
-                            page_data.to_csv(
-                                f"{category}/{category}_rank{rank}_episode{episode}_act{act}.csv")
+                            if page_data is not None:
+                                page_data.to_csv(
+                                    f"{category}/{category}_rank{rank}_episode{episode}_act{act}.csv")
                         except:
                             print(
                                 f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}")
@@ -175,19 +181,61 @@ class BlitzScraper:
             url = f"{self.m_url_map[category]}&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}"
             try:
                 page_data = self.scrape(url)
-                page_data.to_csv(
-                    f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}.csv")
+                if page_data is not None:
+                    page_data.to_csv(
+                        f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}.csv")
             except:
                 print(
                     f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}")
+                
+    def perform_agent_map_scrape(self)->None:
+        """Scrape Blitz.gg for data based on category, rank, episode, and act
+            Save it to appropriate folder based on category, create a CSV, and label it
+
+        Args:
+            category (str): string declaring whether to scrape Maps, Agents, or Weapons
+        """
+        category = "Agents"
+        print(f"BlitzScraper::perform_scrape -- collecting {category} data for all maps")
+
+        if self.m_params["data_spec"] == "all":
+            for rank in self.m_rank:
+                for episode in self.m_episode:
+                    for act in self.m_act:
+                        for map in self.m_maps:
+                            url = f"{self.m_url_map[category]}&rank={rank}&act=e{episode}act{act}&map={map}"
+                            try:
+                                page_data = self.scrape(url)
+                                if page_data is not None:
+                                    page_data.to_csv(
+                                        f"{category}/{category}_rank{rank}_episode{episode}_act{act}_map{map}.csv")
+                            except Exception as e:
+                                print(repr(e))
+                                print(f"Invalid Dataset Request::rank{rank}_episode{episode}_act{act}_map{map}")
+        else:
+            for map in self.m_maps:
+                url = f"{self.m_url_map[category]}&rank={self.m_rank}&act=e{self.m_episode}act{self.m_act}&map={map}"
+                try:
+                    page_data = self.scrape(url)
+                    if page_data is not None:
+                        page_data.to_csv(
+                            f"{category}/{category}_rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}_map{map}.csv")
+                except Exception as e:
+                    print(repr(e))
+                    print(f"Invalid Dataset Request::rank{self.m_rank}_episode{self.m_episode}_act{self.m_act}_map{map}")
 
     def run_scraper(self)->None:
         """Run webscraper for Blitz.gg based on yaml config parameters"""
         print("BlitzScraper::run_scraper -- running scraper")
 
-        if self.m_params["dataset"] == "all":
+        if self.m_params["dataset"] == "general":
+            print("BlitzScraper::run_scraper -- running general scrape")
             self.perform_scrape("Weapons")
             self.perform_scrape("Maps")
             self.perform_scrape("Agents")
+        elif self.m_params["dataset"] == "Agent_Map":
+            print("BlitzScraper::run_scraper -- running agent map scrape")
+            self.perform_agent_map_scrape()
         else:
+            print("BlitzScraper::run_scraper -- running single category scrape")
             self.perform_scrape(self.m_params["dataset"])
