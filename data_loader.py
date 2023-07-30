@@ -16,7 +16,7 @@ class DataPipeline():
     def collect_file_params(self, 
                             load_params: dict[str, any] = None
                             )->tuple[list[int], list[int], list[int]]:
-        if load_params["data_spec"] is "all":
+        if load_params["data_spec"] == "all":
             ranks = [i for i in range(
                 load_params["min_rank"], load_params["max_rank"]+1)]
             episodes = [i for i in range(
@@ -46,11 +46,28 @@ class DataPipeline():
                 for act in acts:
                     key = f"rank{rank}_ep{episode}_act{act}"
                     path = f"{self.m_curr_dir}/{dataset}/{dataset}_{key}"
-                    if agent_maps:
-                        for map in self.m_maps:
-                            dataframe_dict[f"{key}_map{map}"] = pd.read_csv(f"{path}_map{map}")
-                            
-                    else:
-                        dataframe_dict[key] = pd.read_csv(path)
-                        
+                    self.load_csv(dataframe_dict, key, path, agent_maps)
         return dataframe_dict
+    
+    def load_csv(self, 
+                 dataframe_dict: dict[str, pd.DataFrame], 
+                 key: str, path: str, 
+                 agent_maps: bool)->None:
+        """_summary_
+
+        Args:
+            dataframe_dict (dict[str, pd.DataFrame]): _description_
+            key (str): _description_
+            path (str): _description_
+            agent_maps (bool): _description_
+        """
+        if agent_maps:
+            for map in self.m_maps:
+                filename = f"{path}_map{map}"
+                try:
+                    dataframe_dict[f"{key}_map{map}"] = pd.read_csv(filename)
+                except FileNotFoundError:
+                    print(f"DataPipeline::load_csv -- file {filename} does not exist")
+                
+        else:
+            dataframe_dict[key] = pd.read_csv(path)
