@@ -44,7 +44,7 @@ class DataPipeline():
         for rank in ranks:
             for episode in episodes:
                 for act in acts:
-                    key = f"rank{rank}_ep{episode}_act{act}"
+                    key = f"rank{rank}_episode{episode}_act{act}"
                     path = f"{self.m_curr_dir}/{dataset}/{dataset}_{key}"
                     self.load_csv(dataframe_dict, key, path, agent_maps)
         return dataframe_dict
@@ -63,11 +63,11 @@ class DataPipeline():
         """
         if agent_maps:
             for map in self.m_maps:
-                filename = f"{path}_map{map}"
+                filename = f"{path}_map{map}.csv"
                 try:
                     dataframe_dict[f"{key}_map{map}"] = pd.read_csv(filename)
                 except FileNotFoundError:
                     print(f"DataPipeline::load_csv -- file {filename} does not exist")
                 
         else:
-            dataframe_dict[key] = pd.read_csv(path)
+            dataframe_dict[key] = pd.read_csv(f"{path}.csv")
