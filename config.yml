@@ -15,9 +15,9 @@ data_import_parameters:
   dataset: "Agent_Map"
 
   # bounds for episodes and ranks on website
-  min_rank: 25
+  min_rank: 3
   max_rank: 27
-  min_episode: 6
+  min_episode: 2
   max_episode: 7
   min_act: 1
   max_act: 3
