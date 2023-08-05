@@ -65,7 +65,7 @@ class DataPipeline():
             for map in self.m_maps:
                 filename = f"{path}_map{map}.csv"
                 try:
-                    dataframe_dict[f"{key}_map{map}"] = pd.read_csv(filename)
+                    dataframe_dict[f"{key}_map{map}"] = pd.read_csv(filename, index_col=0)
                 except FileNotFoundError:
                     print(f"DataPipeline::load_csv -- file {filename} does not exist")
                 
